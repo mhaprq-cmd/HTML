@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>محول Base64 المحلي</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 720px;
+      margin: 30px auto;
+      padding: 16px;
+      line-height: 1.8;
+      background: #f4f6f8;
+      color: #17202a;
+    }
+    main {
+      background: white;
+      padding: 20px;
+      border-radius: 14px;
+    }
+    input, textarea, button {
+      box-sizing: border-box;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      font: inherit;
+    }
+    textarea {
+      min-height: 180px;
+      direction: ltr;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+    button {
+      border: 0;
+      border-radius: 8px;
+      background: #1769e0;
+      color: white;
+    }
+    #status { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>محول Base64 للملفات</h1>
+  <p>
+    التحويل يتم داخل متصفحك. لا يحتوي هذا الملف على كود
+    لإرسال الملفات إلى خادم أو رفعها إلى الإنترنت.
+  </p>
+
+  <label for="file">اختر الملف من هاتفك:</label>
+  <input id="file" type="file">
+
+  <button id="convert" type="button">تحويل إلى Base64</button>
+
+  <p id="status" role="status">لم يتم اختيار ملف بعد.</p>
+
+  <label for="result">الناتج:</label>
+  <textarea id="result" readonly
+    placeholder="سيظهر النص هنا بعد التحويل"></textarea>
+
+  <button id="download" type="button" disabled>
+    حفظ الناتج كملف TXT
+  </button>
+</main>
+
+<script>
+"use strict";
+
+const fileInput = document.getElementById("file");
+const result = document.getElementById("result");
+const status = document.getElementById("status");
+const convertButton = document.getElementById("convert");
+const downloadButton = document.getElementById("download");
+
+convertButton.addEventListener("click", async () => {
+  const file = fileInput.files[0];
+
+  if (!file) {
+    status.textContent = "اختر ملفًا أولًا.";
+    return;
+  }
+
+  result.value = "";
+  downloadButton.disabled = true;
+  status.textContent = "جارٍ التحويل محليًا...";
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = "";
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(
+        ...bytes.subarray(i, i + chunkSize)
+      );
+    }
+
+    result.value = btoa(binary);
+    downloadButton.disabled = false;
+    status.textContent =
+      "اكتمل التحويل. عدد أحرف Base64: " + result.value.length;
+  } catch (error) {
+    status.textContent = "تعذر التحويل. حاول مرة أخرى.";
+  }
+});
+
+downloadButton.addEventListener("click", () => {
+  if (!result.value) return;
+
+  const blob = new Blob([result.value], {
+    type: "text/plain;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "keystore-base64.txt";
+  link.click();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+</script>
+</body>
+    </html>
+    
